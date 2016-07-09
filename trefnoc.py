@@ -15,10 +15,10 @@ from PyQt4 import QtCore, QtGui # if you want a Graphical User Interface, that i
 
 # "static global variables"
 args = {}
-args['database_host'] = '10.0.0.7'
-args['database_user'] = 'root'
-args['database_pass'] = 'cep04547'
-args['database_tabl'] = 'vetorlobo'
+args['database_host'] = 'localhost'
+args['database_user'] = 'user'
+args['database_pass'] = 'pass'
+args['database_tabl'] = 'videos'
 args['database_alth'] = '' # alternate host
 args['database_altu'] = '' # alternate host's user
 args['database_altp'] = '' # alternate host's user's password
@@ -39,7 +39,7 @@ args['debug'] = False
 ### program starts here
 
 def help (version, parser):
-	print 'TREfNOC - a utility for CONvERT-ing REf-erence files to a normalized standard, to VetorZero'
+	print 'TREfNOC - a utility for CONvERT-ing REf-erence files to a normalized standard'
 	print version
 	print ''
 	print '  The idea here is automating the conversion and standardization of media files being uploaded to a server, to make them properly avaiable to the website.'
@@ -125,7 +125,7 @@ class MainWindow (QtGui.QWidget):
 		""" window constructor only """
 		QtGui.QWidget.__init__(self, parent)
 
-		self.setWindowTitle('treFnoc (Conversor de Videos - Vetor Zero)')
+		self.setWindowTitle('treFnoc (Video Conversor)')
 
 		self.thread = Worker() # this does not begin a thread - look at "Worker.run" for mor details
 		self.connect(self.thread, QtCore.SIGNAL('finished()'), self.unfreezeUi)
