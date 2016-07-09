@@ -1,6 +1,6 @@
 #!/usr/bin/python2.5
 
-# for more about please look at the help below, run "./trefnoc.py -h" or visit http://www.cregox.com/trefnoc 
+# for more about please look at the help below, run "./trefnoc.py -h" or visit http://cregox.com/trefnoc
 
 import math, sys, os, subprocess, time # needed for the core
 import re # could be skipped if a better method would be found to get the file's time
@@ -37,7 +37,7 @@ args['debug'] = False
 
 
 ### program starts here
-	
+
 def help (version, parser):
 	print 'TREfNOC - a utility for CONvERT-ing REf-erence files to a normalized standard, to VetorZero'
 	print version
@@ -54,51 +54,51 @@ def help (version, parser):
 	print ' $ py -t20 -si 120 --log="/tmp/trefnoc.log"'
 	print ' (set thumbnail frames to 20, daemon interval to 2 minutes and the log file.)'
 	sys.exit()
-	
+
 def help_usage ():
 	print 'usage: trefnoc.py [hfbgtilqvd]... [PATH]'
 	print 'example: trefnoc.py -d'
 	print "try `trefnoc.py --help' for more information and command line options."
-	
+
 def parseArguments ():
-	version = 'version 1.0 built in 2010-05-14 - for more info, visit http://www.cregox.com/trefnoc'
-	
+	version = 'version 1.0 built in 2010-05-14 - for more info, visit http://cregox.com/trefnoc'
+
 	if len(sys.argv) < 2:
 		help_usage()
 		return False
-	
+
 	if len(args['workingDirectory']) > 0:
 		if args['workingDirectory'][0] != '/':
 			args['workingDirectory'] = '%s/%s'%(os.getcwd(), args['workingDirectory'])
-	
+
 	parser = OptionParser(
-		usage='usage: trefnoc.py [OPTIONS]... [PATH]', version=version, add_help_option=False, 
+		usage='usage: trefnoc.py [OPTIONS]... [PATH]', version=version, add_help_option=False,
 		description='PATH: where the files will be saved - if none is provided the current default one will be chosen: ' + args['workingDirectory'])
 	parser.add_option('-h', '--help', dest='help', action='store_true', help='show this help message and exit')
 	parser.add_option('-g', '--ffmpeg', dest='ffmpeg', type='string', default=args['ffmpeg'], help='determine the path of ffmpeg, needed for converting (%default)')
 	parser.add_option('-t', '--frames', dest='frames', type='int', default=args['frames_to_preview_on_thumbnail'], help='select how many frames should be generated for the thumbnailed preview, use 0 to none (%default)')
 	parser.add_option('-i', '--interval', dest='interval', type='int', default=args['daemonInterval'], help='how many seconds should the Daemon hold before re-running (%default)')
 	parser.add_option('-s', '--daemon', dest='daemon', action='store_true', default=args['startInDaemon'], help='starts running daemon as soon as the program begins')
-	
+
 	outputGroup = OptionGroup(parser, 'Output handling')
 	outputGroup.add_option('-l', '--log', dest='log', metavar="FILE", default=args['logFile'], help='use a different log file than the default (%default)')
 	outputGroup.add_option('-q', '--quiet', dest='quiet', action='store_true', default=args['quiet'], help="doesn't display anything on screen, given no verbose or debug is set.")
 	outputGroup.add_option('-v', '--verbose', dest='verbose', action='store_true', default=args['verbose'], help='print log information on screen. Overrides quiet.')
 	outputGroup.add_option('-d', '--debug', dest='debug', action='store_true', default=args['debug'], help='set to log and display debugging information.')
 	parser.add_option_group(outputGroup)
-	
+
 	(option, arg) = parser.parse_args(sys.argv)
-	
+
 	if len(arg) > 1:
 		if len(arg[1]) > 0:
 			if arg[1][0] != '/':
 				args['workingDirectory'] = '%s/%s'%(os.getcwd(), arg[1])
 			else:
 				args['workingDirectory'] = arg[1]
-	
+
 	if option.help:
 		help(version, parser)
-	
+
 	args['frames_to_preview_on_thumbnail'] = option.frames
 	args['daemonInterval'] = option.interval
 	args['logFile'] = option.log
@@ -106,51 +106,51 @@ def parseArguments ():
 	args['verbose'] = option.verbose
 	args['quiet'] = option.quiet
 	args['debug'] = option.debug
-	
+
 	return (option, arg)
-	
+
 class Trefnoc (QtGui.QWidget):
 	""" Trefnoc contains "global vars" as its attributes for internal use, read-only - never use global vars among threads """
 	blockSize = 2**14 # for optimizing reading / opening big files, for md5 it must be multiple of 2**7, or 128
 	totalSteps = 20 # must be manually set according to how many steps the progress bar will have.
-	
+
 class MainWindow (QtGui.QWidget):
 	""" MainWindow contain GUI elements only """
 	thread = None
 	queueNumber = 0
-	
+
 	def __del__ (self):
 		log('[info] treFnoc exited')
 	def __init__ (self, parent = None):
 		""" window constructor only """
 		QtGui.QWidget.__init__(self, parent)
-		
+
 		self.setWindowTitle('treFnoc (Conversor de Videos - Vetor Zero)')
-		
+
 		self.thread = Worker() # this does not begin a thread - look at "Worker.run" for mor details
 		self.connect(self.thread, QtCore.SIGNAL('finished()'), self.unfreezeUi)
 		self.connect(self.thread, QtCore.SIGNAL('terminated()'), self.unfreezeUi)
-		
+
 		# Horizontal and Vertical boxes
 		mainLayout = QtGui.QVBoxLayout()
 		listsLayout = QtGui.QHBoxLayout()
 		queueLayout = QtGui.QVBoxLayout()
 		finishedLayout = QtGui.QVBoxLayout()
 		buttonsLayout = QtGui.QHBoxLayout()
-		
+
 		self.listQueue = QtGui.QListWidget()
 		self.listFinished = QtGui.QListWidget()
-		
+
 		# queues
 		queueLayout.addWidget(QtGui.QLabel('Queue'))
 		queueLayout.addWidget(self.listQueue)
-		finishedLayout.addWidget(QtGui.QLabel('Finished'))		
+		finishedLayout.addWidget(QtGui.QLabel('Finished'))
 		finishedLayout.addWidget(self.listFinished)
 		listsLayout.addLayout(queueLayout)
 		listsLayout.addLayout(finishedLayout)
 		self.connect(self.thread, QtCore.SIGNAL('addQueue(QString)'), self.addQueue)
 		self.connect(self.thread, QtCore.SIGNAL('addFinished(QString)'), self.addFinished)
-		
+
 		# progress bar
 		self.progress = QtGui.QProgressBar()
 		self.progress.setTextVisible(True)
@@ -160,7 +160,7 @@ class MainWindow (QtGui.QWidget):
 		mainLayout.addWidget(self.progress)
 		self.connect(self.thread, QtCore.SIGNAL('setProgressRange(float, int, int, QString)'), self.setProgressRange)
 		self.connect(self.thread, QtCore.SIGNAL('setProgress(float, int, QString)'), self.setProgress)
-		
+
 		# buttons
 		self.buttonsLabel = QtGui.QLabel('select an action below')
 		mainLayout.addWidget(self.buttonsLabel)
@@ -168,24 +168,24 @@ class MainWindow (QtGui.QWidget):
 		self.buttonDaemon = QtGui.QPushButton('Daemon - converts every %s sec'% args['daemonInterval'])
 		buttonsLayout.addWidget(self.buttonDaemon)
 		self.connect(self.buttonDaemon, QtCore.SIGNAL('clicked()'), self.pressDaemon)
-		
+
 		self.buttonConvert = QtGui.QPushButton('Convert - Manually')
 		buttonsLayout.addWidget(self.buttonConvert)
 		self.connect(self.buttonConvert, QtCore.SIGNAL('clicked()'), self.convertOnce)
-		
+
 		mainLayout.addLayout(buttonsLayout)
-		
+
 		# show
 		self.setLayout(mainLayout)
 		if args['startInDaemon']:
 			pressDaemon()
-		
+
 	def unfreezeUi (self, progressValue = None):
 		self.buttonConvert.setEnabled(True)
 		self.buttonDaemon.setEnabled(True)
 		self.setProgressRange(msg='0')
 		self.setProgress()
-		
+
 	def setProgressRange (self, delay = 0.0, min = 0, max = 1, msg = ''):
 		self.progress.setRange(min, max)
 		if msg == '0':
@@ -200,18 +200,18 @@ class MainWindow (QtGui.QWidget):
 		else:
 			self.buttonsLabel.setText(msg)
 		self.progress.reset()
-		
+
 	def setProgress (self, delay = 0.0, value = 0, msg = ''):
 		self.progress.setValue(value)
 		if msg != '':
 			self.buttonsLabel.setText(msg)
 		if delay > 0:
 			self.buttonsLabel.setText('waiting %.1f seconds'%(args['daemonInterval'] - delay))
-		
+
 	def addQueue (self, value):
 		self.queueNumber += 1
 		self.listQueue.addItem(QtGui.QListWidgetItem('%d. %s'%(self.queueNumber, value)))
-		
+
 	def addFinished (self, value = '', itemN = 0):
 		# the top most item (0) on the queue list should always be the first to go, as it will be numbered lower
 		try:
@@ -221,12 +221,12 @@ class MainWindow (QtGui.QWidget):
 			raise
 		self.listFinished.addItem(QtGui.QListWidgetItem('%s %s'%(itemText, value)))
 		self.listQueue.takeItem(itemN)
-		
+
 	def convertOnce (self):
 		self.buttonConvert.setEnabled(False)
 		self.buttonDaemon.setEnabled(False)
 		self.thread.convert()
-	
+
 	def pressDaemon (self):
 		self.buttonDaemon.setEnabled(False)
 		if self.thread.isDaemonRunning():
@@ -237,33 +237,33 @@ class MainWindow (QtGui.QWidget):
 			self.thread.startDaemon()
 			self.buttonDaemon.setText('Stop Daemon')
 			self.buttonDaemon.setEnabled(True)
-		
-class Worker (QtCore.QThread):	
+
+class Worker (QtCore.QThread):
 	""" Worker contains different threads that should run in the background, one per time in the same thread """
 	fileName = None
 	progressStep = 0
 	daemonIsRunning = False
 	daemonStopSignal = False
 	daemonCurrentDelay = 0
-		
+
 	def isDaemonRunning (self): return self.daemonIsRunning
 	def setDaemonStopSignal (self, bool): self.daemonStopSignal = bool
-	
+
 	def __init__ (self, parent = None):
 		QtCore.QThread.__init__(self, parent)
 		self.exiting = False
 		self.thread_to_run = None  # which def will be running
-		
+
 	def __del__ (self):
 		self.exiting = True
 		self.thread_to_run = None
 		self.wait()
-		
+
 	def run (self):
 		""" Note: This is never called directly and accepts no argument. This begins the thread. """
 		if self.thread_to_run != None:
 			self.thread_to_run(mode='continue')
-	
+
 	def startDaemon (self, mode = 'run'):
 		if mode == 'run':
 			self.thread_to_run = self.startDaemon
@@ -272,7 +272,7 @@ class Worker (QtCore.QThread):
 		self.daemonIsRunning = True
 		self.daemonStopSignal = False
 		sleepStep = 0.1 # don't know how to interrupt while sleeping - so the less sleepStep, the faster StopSignal will work
-		
+
 		# begins the daemon in an "infinite" loop
 		while self.daemonStopSignal == False and not self.exiting:
 			self.emit(QtCore.SIGNAL('setProgressRange(float, int, int, QString)'), self.daemonCurrentDelay, 0, Trefnoc.totalSteps, '1') # run
@@ -283,23 +283,23 @@ class Worker (QtCore.QThread):
 				self.emit(QtCore.SIGNAL('setProgress(float, int, QString)'), self.daemonCurrentDelay, (self.daemonCurrentDelay+sleepStep)/sleepStep, '')
 				time.sleep(sleepStep) # delay is actually set by while, but this holds for 1 second
 				self.daemonCurrentDelay += sleepStep
-		
+
 		# daemon stopped, reseting everything
 		self.daemonIsRunning = False
 		self.daemonCurrentDelay = 0
 		self.emit(QtCore.SIGNAL('terminated'))
 		self.emit(QtCore.SIGNAL('setProgress(float, int)'), self.daemonCurrentDelay, 0)
 		self.emit(QtCore.SIGNAL('setProgressRange(float, int, int, QString)'), self.daemonCurrentDelay, 0, 1, '0')
-	
+
 	def convert (self, mode = 'run'):
 		if mode == 'run':
 			self.thread_to_run = self.convert
 			return self.start() # this will begin the thread
-		
+
 		self.progressStep = 0
-		
+
 		self.emit(QtCore.SIGNAL('setProgressRange(float, int, int, QString)'), self.daemonCurrentDelay, 0, Trefnoc.totalSteps, 'connecting the database. . .')
-		
+
 		# start connection with the database - the first one may take a while
 		self.progressStep = 1
 		self.emit(QtCore.SIGNAL('setProgress(float, int)'), self.daemonCurrentDelay, self.progressStep)
@@ -322,7 +322,7 @@ class Worker (QtCore.QThread):
 			executeDb(dbCursor, 'SELECT * FROM ref WHERE ref_status IN (1, 2)')
 		finally:
 			closeDb(dbConnection) # always close database connections as soon as possible
-		
+
 		# iterate through all results to show on the queue
 		if self.daemonIsRunning:
 			startedMode = ''
@@ -333,7 +333,7 @@ class Worker (QtCore.QThread):
 			# updating queue and log
 			self.emit(QtCore.SIGNAL('addQueue(QString)'), '%s %s#%s'%
 				(time.ctime(), startedMode, row['ref_path']) )
-		
+
 		#	dbConnection, dbCursor = connectDb(dbConnection)
 		#	executeDb(dbCursor, 'SELECT * FROM ref WHERE ref_status IN (1, 2)')
 		#	closeDb(dbConnection) # always close database connections as soon as possible
@@ -362,7 +362,7 @@ class Worker (QtCore.QThread):
 				continue # maybe it would be better to "raise" if it could be done without interrupting the process
 			else:
 				if args['debug']: log(bcolors.debug('[debug] checksum: "%s"'% checksum))
-			
+
 			# open another DB connection to verify the checksum and update its status
 			self.progressStep += 1
 			self.emit(QtCore.SIGNAL('setProgress(float, int)'), self.daemonCurrentDelay, self.progressStep)
@@ -403,7 +403,7 @@ class Worker (QtCore.QThread):
 		self.emit(QtCore.SIGNAL('setProgress(float, int)'), self.daemonCurrentDelay, self.progressStep)
 
 		self.emit(QtCore.SIGNAL('setProgressRange(float, int, int, QString)'), self.daemonCurrentDelay, 0, Trefnoc.totalSteps, '0')
-		
+
 	# this is where the conversion is actually done
 	def convert_core (self):
 		# get time duration using ffmpeg
@@ -424,9 +424,9 @@ class Worker (QtCore.QThread):
 		else:
 			# treat error
 			log(bcolors.error('''[error] Couldn't find file ''' + self.fileName))
-		
+
 		if args['debug']: log(bcolors.debug('[debug] Duration found: ' + str(duration)))
-		
+
 		self.progressStep += 1
 		self.emit(QtCore.SIGNAL('setProgress(float, int)'), self.daemonCurrentDelay, self.progressStep)
 		# extract big thumbnail to show as default
@@ -434,7 +434,7 @@ class Worker (QtCore.QThread):
 		cmd = (args['ffmpeg'] + ' -y -i "' + self.fileName + '" -deinterlace -an -r 1 -t 1 -ss ' + strDuration +
 			' "' + self.fileName + '.preview.jpg"' )
 		shell(cmd)
-		
+
 		self.progressStep += 1
 		self.emit(QtCore.SIGNAL('setProgress(float, int)'), self.daemonCurrentDelay, self.progressStep)
 		# extract frames to show on thumbnail rollover preview
@@ -444,14 +444,14 @@ class Worker (QtCore.QThread):
 		cmd = (args['ffmpeg'] + ' -y -i "' + self.fileName + '" -deinterlace -an -r ' + str(frame_rate) +
 			' "' + self.fileName + '.rollover_%02d.jpg"' )
 		shell(cmd)
-		
+
 		self.progressStep += 1
 		self.emit(QtCore.SIGNAL('setProgress(float, int)'), self.daemonCurrentDelay, self.progressStep)
 		# create a playable FLV file for streaming or playing embeded
 		cmd = (args['ffmpeg'] + ' -i "' + self.fileName + '" -mbd rd -flags +4mv+aic -trellis 2 -cmp 2 -subcmp 2 -g 300' +
 			' "' + self.fileName + '.flv"' )
 		shell(cmd)
-		
+
 		self.progressStep += 1
 		self.emit(QtCore.SIGNAL('setProgress(float, int)'), self.daemonCurrentDelay, self.progressStep)
 		# create a standard quality MOV file for download
@@ -460,10 +460,10 @@ class Worker (QtCore.QThread):
 			' -metadata original="' + self.fileName + '"' +
 			' "' + self.fileName + '.mov"' )
 		shell(cmd)
-		
+
 		self.progressStep += 1
 		self.emit(QtCore.SIGNAL('setProgress(float, int)'), self.daemonCurrentDelay, self.progressStep)
-	
+
 def connectDb (dbConnection = None):
 	""" connects to the database server, based on the environment variables - remember to always db.close() it as soon as possible """
 	if dbConnection == None:
@@ -483,7 +483,7 @@ def connectDb (dbConnection = None):
 			raise
 	if args['debug']: log(bcolors.debug('[debug] database connected!'))
 	return dbConnection, dbConnection.cursor()
-	
+
 def executeDb (dbCursor = None, query = None):
 	try:
 		result = dbCursor.execute(query)
@@ -492,7 +492,7 @@ def executeDb (dbCursor = None, query = None):
 		raise
 	if args['debug']: log(bcolors.debug('[debug] query executed successfully: "%s"'% query))
 	return result
-	
+
 def closeDb (dbConnection = None):
 	try:
 		dbConnection.close()
@@ -501,7 +501,7 @@ def closeDb (dbConnection = None):
 		raise
 	if args['debug']: log(bcolors.debug('[debug] database connection was successfully closed.'))
 	return True
-	
+
 def md5_from_file (fileName, block_size=Trefnoc.blockSize):
 	md5 = hashlib.md5()
 	try:
@@ -515,7 +515,7 @@ def md5_from_file (fileName, block_size=Trefnoc.blockSize):
 		md5.update(data)
 	f.close()
 	return md5.hexdigest()
-	
+
 def shell (cmd):
 	if args['debug']:
 		doTime = 'time '
@@ -542,7 +542,7 @@ class bcolors ():
 	def warning (self, text = ''): return self.WARNING + text + self.ENDC
 	def info (self, text = ''): return self.INFO + text + self.ENDC
 	def debug (self, text = ''): return self.DEBUG + text + self.ENDC
-	
+
 def now (): return datetime.datetime.today()
 def now_intl (): return str(now().strftime('%Y-%m-%d %H:%M:%S'))
 def do_print (x): print x
