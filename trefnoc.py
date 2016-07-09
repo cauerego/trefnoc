@@ -325,9 +325,8 @@ class Worker (QtCore.QThread):
 			finally:
 				closeDb(dbConnection) # always close database connections as soon as possible
 		else:
-			log(bcolors.critical('[critical] csv file for not using database was never implemented! - ' + str(sys.exc_info())))
-			raise
-			pass # need to reverse engineer the database layout and create a csv file here
+			log(bcolors.critical('[critical] csv file for not using database was never implemented! Queue will always be empty.'))
+			return None # need to reverse engineer the database layout and create a csv file here
 
 
 		# iterate through all results to show on the queue
