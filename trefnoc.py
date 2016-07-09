@@ -379,7 +379,7 @@ class Worker (QtCore.QThread):
 				if dbCursor.fetchone() != None: # the query for the checksum should be empty
 					executeDb(dbCursor, 'UPDATE ref SET ref_status = 3 WHERE ref_id = "%s"'% row['ref_id'])
 					self.emit(QtCore.SIGNAL('addFinished(QString)'), 'erro checksum! (%s)'% time.ctime())
-					log(bcolors.warning('[warning] MD5 of this file already exists on the database, thus it must be duplicate'))
+					log(bcolors.warning('[warning] duplicated MD5 of this file!'))
 					continue # maybe it would be better to "raise" if it could be done without interrupting the process
 				executeDb(dbCursor, 'UPDATE ref SET ref_status = 1 WHERE ref_id = "%s"'% row['ref_id'])
 			finally: # close DB connection before starting conversion
