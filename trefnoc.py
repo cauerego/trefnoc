@@ -15,6 +15,7 @@ from PyQt4 import QtCore, QtGui # if you want a Graphical User Interface, that i
 
 # "static global variables"
 args = {}
+args['useDatabase'] = False
 args['database_host'] = 'localhost'
 args['database_user'] = 'user'
 args['database_pass'] = 'pass'
@@ -298,30 +299,36 @@ class Worker (QtCore.QThread):
 
 		self.progressStep = 0
 
-		self.emit(QtCore.SIGNAL('setProgressRange(float, int, int, QString)'), self.daemonCurrentDelay, 0, Trefnoc.totalSteps, 'connecting the database. . .')
+		if args['useDatabase']:
+			self.emit(QtCore.SIGNAL('setProgressRange(float, int, int, QString)'), self.daemonCurrentDelay, 0, Trefnoc.totalSteps, 'connecting the database. . .')
 
-		# start connection with the database - the first one may take a while
-		self.progressStep = 1
-		self.emit(QtCore.SIGNAL('setProgress(float, int)'), self.daemonCurrentDelay, self.progressStep)
-		dbConnection, dbCursor = connectDb()
-		try:
-			# grab from the database a list of files to be converted, should be as fast as possible
-			self.progressStep += 1
+			# start connection with the database - the first one may take a while
+			self.progressStep = 1
 			self.emit(QtCore.SIGNAL('setProgress(float, int)'), self.daemonCurrentDelay, self.progressStep)
-			if args['debug']:
-				if self.daemonCurrentDelay == 0:
-					executeDb(dbCursor, 'UPDATE ref SET ref_status = 2 WHERE ref_id IN (77, 78, 79)') # setting status and ...
-					executeDb(dbCursor, 'UPDATE ref SET ref_checksum = "" WHERE ref_id IN (77, 78, 79)') # removing checksum for debugging
-			executeDb(dbCursor, 'SELECT COUNT(*) total FROM ref WHERE ref_status IN (1, 2)')  # 1 is for processing, 2 for downloaded and 3 for error
-			row = dbCursor.fetchone()
-			if row['total'] == 0:
-				log(bcolors.info('[info] There is no file to process in the database'))
-				return None
-			else:
-				log(bcolors.info('[info] Total number of files processing: ' + str(row['total'])))
-			executeDb(dbCursor, 'SELECT * FROM ref WHERE ref_status IN (1, 2)')
-		finally:
-			closeDb(dbConnection) # always close database connections as soon as possible
+			dbConnection, dbCursor = connectDb()
+			try:
+				# grab from the database a list of files to be converted, should be as fast as possible
+				self.progressStep += 1
+				self.emit(QtCore.SIGNAL('setProgress(float, int)'), self.daemonCurrentDelay, self.progressStep)
+				if args['debug']:
+					if self.daemonCurrentDelay == 0:
+						executeDb(dbCursor, 'UPDATE ref SET ref_status = 2 WHERE ref_id IN (77, 78, 79)') # setting status and ...
+						executeDb(dbCursor, 'UPDATE ref SET ref_checksum = "" WHERE ref_id IN (77, 78, 79)') # removing checksum for debugging
+				executeDb(dbCursor, 'SELECT COUNT(*) total FROM ref WHERE ref_status IN (1, 2)')  # 1 is for processing, 2 for downloaded and 3 for error
+				row = dbCursor.fetchone()
+				if row['total'] == 0:
+					log(bcolors.info('[info] There is no file to process in the database'))
+					return None
+				else:
+					log(bcolors.info('[info] Total number of files processing: ' + str(row['total'])))
+				executeDb(dbCursor, 'SELECT * FROM ref WHERE ref_status IN (1, 2)')
+			finally:
+				closeDb(dbConnection) # always close database connections as soon as possible
+		else:
+			log(bcolors.critical('[critical] csv file for not using database was never implemented! - ' + str(sys.exc_info())))
+			raise
+			pass # need to reverse engineer the database layout and create a csv file here
+
 
 		# iterate through all results to show on the queue
 		if self.daemonIsRunning:
