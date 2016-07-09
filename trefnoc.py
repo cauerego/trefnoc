@@ -28,7 +28,7 @@ args['database_alte'] = 'VZ_ALT_DATABASE_SERVER' # enviroment var which contains
 
 args['workingDirectory'] = 'uploads/' # default output path, if empty sets to current
 args['frames_to_preview_on_thumbnail'] = 7
-args['daemonInterval'] = (2*60)+56 # seconds
+args['daemonInterval'] = 4 # seconds
 args['logFile'] = 'log/trefnoc.txt'
 args['ffmpeg'] = '/usr/bin/ffmpeg'
 args['startInDaemon'] = False
